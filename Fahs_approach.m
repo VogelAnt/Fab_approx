@@ -29,7 +29,7 @@ for n = 1:(N-1)
 end
 
 % initial rho
-rho_init = zeros(N, N);
+rho_init = zeros(N,N);
 rho_init(1, 1) = 1;
 
 % enable higher precisionf
@@ -57,21 +57,20 @@ trace_fab = zeros(size(t));
 pop_me = zeros(N, length(t));
 pop_fab = zeros(N, length(t));
 
-% prepare matrix exponential
-U = expm(-1i * dt/hbar * Hamiltonian);
+
 
 % Compute real part of the field of values
-Re_rhs = ((Liouvillian(rho_init)+Liouvillian(rho_init)')/2);
+Re_L = ((Liouvillian(rho_init)+Liouvillian(rho_init)')/2);
 
 % Compute imaginary part of the field of values 
-Im_rhs = ((Liouvillian(rho_init)-Liouvillian(rho_init)')/(2i));
+Im_L = ((Liouvillian(rho_init)-Liouvillian(rho_init)')/(2i));
 
 % Compute factors for rectangle from field of values enclosing spectrum
 % and factors of optimal ellipse enclosing the rectangle 
 % [Xi_1, Xi_2, -l, l] containing the spectrum of L
-Xi_1 = min(eig(Re_rhs));
-Xi_2 = max(eig(Re_rhs));
-l = max(imag(eig(Im_rhs)));
+Xi_1 = min(eig(Re_L));
+Xi_2 = max(eig(Re_L));
+l = max(imag(eig(Im_L)));
 c = abs((Xi_2-Xi_1)/2);
 
 % Compute optimal scaling factor to preserve stability
@@ -102,6 +101,9 @@ dt_tilde = sf*dt;
 % scaled time vector
 t_tilde = 0:dt_tilde:te;
 
+% prepare matrix exponential
+U = expm(-1i * dt_tilde/hbar * Hamiltonian);
+
 % establish polynomial truncation order
 for n = 1:1000
     c_m = @(dt_tilde, m) ((-1i/sqrt(b_1))^m*exp(dt_tilde*b_0)*...
@@ -120,9 +122,11 @@ I = ones(size(scaled_Liouvillian(rho_fab)));
 
 P = zeros((M+1)*N,N);
 
+% the Liouvillian doesn't change with every iteration!
+L = scaled_Liouvillian(rho_init);
 tic;
 % length of time vector is equivalent to number of timesteps
-for n = 1:10
+for n = 1:100
     rho_me = U * rho_me * U';
     
     % Compute Faber coefficients for the discrete time step n*dt
@@ -134,11 +138,11 @@ for n = 1:10
     P(1:N, 1:N) = rho_fab;
     
     % P_1 = F1*rho_fab (from previous timestep n-1)
-    P((N+1):(2*N), 1:N) = (scaled_Liouvillian(rho_fab)-b_0*I)*rho_fab;
+    P((N+1):(2*N), 1:N) = (L-b_0*I)*rho_fab;
     
     % P_2 = F_2*rho_fab (from previous timestep n-1)
     % THE FIRST RESULT OF THE RHS IS NOT DISPLAYED !
-    P((2*N+1):(3*N), 1:N) = (scaled_Liouvillian(rho_fab)-b_0*I)*rho_fab-2*b_1*rho_fab;
+    P((2*N+1):(3*N), 1:N) = (L-b_0*I)*rho_fab-2*b_1*rho_fab;
     
     % c0*p_0+c1*p_1+c_2*p_2
     rho_fab = CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N); 
@@ -146,7 +150,7 @@ for n = 1:10
     % P_2 ... P_M = F_2*rho_fab...P_M*rho_fab(from previous timestep n-1)
     for i = 3:M
         % p_{m+1} = L_sc(rho_fab)*p_m - b_0*p_m - b_1*p_{m-1}
-        P((i*N)+1:(i+1)*N, 1:N) = scaled_Liouvillian(rho_fab)*P((i-1)*N+1:(i)*N, 1:N)...
+        P((i*N)+1:(i+1)*N, 1:N) = L*P((i-1)*N+1:(i)*N, 1:N)...
             -b_0*P((i-1)*N+1:(i)*N, 1:N)...
             -b_1*P((i-1-1)*N+1:(i-1)*N, 1:N);
         
