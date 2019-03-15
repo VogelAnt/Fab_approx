@@ -1,5 +1,4 @@
-% Faber approximation for ellipse-shaped domains(recursive polynomial
-% computation)
+% Faber approximation for ellipse-shaped domains
 clear;
 close all;
 
@@ -57,105 +56,19 @@ trace_fab = zeros(size(t));
 pop_me = zeros(N, length(t));
 pop_fab = zeros(N, length(t));
 
-
-
-% Compute real part of the field of values
-Re_L = ((Liouvillian(rho_init)+Liouvillian(rho_init)')/2);
-
-% Compute imaginary part of the field of values 
-Im_L = ((Liouvillian(rho_init)-Liouvillian(rho_init)')/(2i));
-
-% Compute factors for rectangle from field of values enclosing spectrum
-% and factors of optimal ellipse enclosing the rectangle 
-% [Xi_1, Xi_2, -l, l] containing the spectrum of L
-Xi_1 = min(eig(Re_L));
-Xi_2 = max(eig(Re_L));
-l = max(imag(eig(Im_L)));
-c = abs((Xi_2-Xi_1)/2);
-
-% Compute optimal scaling factor to preserve stability
-sf = ((l^(2/3)+c^(2/3))^(3/2))/2;
-
-% scaled right-hand side Liouville-von Neumann equation-->scaled Liouvillian
-scaled_Liouvillian = @(rho) ( -1i/hbar * (Hamiltonian * rho - rho * Hamiltonian)/sf);
-
-% Scaled factors of rectangle and optimal ellipse
-l_sc = l/sf;
-Xi_1_sc = Xi_1/sf;
-Xi_2_sc = Xi_2/sf;
-c_sc = abs((Xi_2_sc-Xi_1_sc)/2);
-
-% Compute the center of the optimal ellipse, first laurent expansion
-% coefficient of PSI
-b_0 =(Xi_1_sc+Xi_2_sc)/2;
-
-% Compute the logarithmic capacity of the optimal ellipse
-r = (sqrt(c_sc^2+(l_sc*c_sc^2)^(2/3))+sqrt(l_sc^2+(c_sc*l_sc^2)^(2/3)))/2;
-
-% Compute second factor in finite conformal mapping for ellipsoid domain
-b_1 = (c_sc^(2/3)+l_sc^(2/3)*(c_sc^(4/3)-l_sc^(4/3)))/(4*r);
-
-% Scaled timestep
-dt_tilde = sf*dt;
-
-% scaled time vector
-t_tilde = 0:dt_tilde:te;
-
 % prepare matrix exponential
-U = expm(-1i * dt_tilde/hbar * Hamiltonian);
+U = expm(-1i * dt/hbar * Hamiltonian);
 
-% establish polynomial truncation order
-for n = 1:1000
-    c_m = @(dt_tilde, m) ((-1i/sqrt(b_1))^m*exp(dt_tilde*b_0)*...
-    besselj(m, 2*dt_tilde*sqrt(-b_1)));
-    CM(n) = double(c_m(dt_tilde, n));
-    if abs(CM(n))<10e-15
-        break
-    end
-end
-
-% polynomial truncation order
-M = length(CM);
-
-% non recursive solution
-I = ones(size(scaled_Liouvillian(rho_fab)));
-
-P = zeros((M+1)*N,N);
-
-% the Liouvillian doesn't change with every iteration!
-L = scaled_Liouvillian(rho_init);
 tic;
 % length of time vector is equivalent to number of timesteps
 for n = 1:100
     rho_me = U * rho_me * U';
     
-    % Compute Faber coefficients for the discrete time step n*dt
-    CM = fab(M, n*dt_tilde, b_0, b_1);
+    % Liouvillian changing with every iteration
+    L = Liouvillian(rho_fab);
     
-    % Compute matrix valued Faber polynomial recurrence relation
-    % Compute initial value polynomials P_0, P_1, P_2:
-    % P_0 = F_0*rho_fab (from previous timestep n-1)
-    P(1:N, 1:N) = rho_fab;
-    
-    % P_1 = F1*rho_fab (from previous timestep n-1)
-    P((N+1):(2*N), 1:N) = (L-b_0*I)*rho_fab;
-    
-    % P_2 = F_2*rho_fab (from previous timestep n-1)
-    % THE FIRST RESULT OF THE RHS IS NOT DISPLAYED !
-    P((2*N+1):(3*N), 1:N) = (L-b_0*I)*rho_fab-2*b_1*rho_fab;
-    
-    % c0*p_0+c1*p_1+c_2*p_2
-    rho_fab = CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N); 
-    
-    % P_2 ... P_M = F_2*rho_fab...P_M*rho_fab(from previous timestep n-1)
-    for i = 3:M
-        % p_{m+1} = L_sc(rho_fab)*p_m - b_0*p_m - b_1*p_{m-1}
-        P((i*N)+1:(i+1)*N, 1:N) = L*P((i-1)*N+1:(i)*N, 1:N)...
-            -b_0*P((i-1)*N+1:(i)*N, 1:N)...
-            -b_1*P((i-1-1)*N+1:(i-1)*N, 1:N);
-        
-        rho_fab = rho_fab + CM(i+1)*P((i*N)+1:(i+1)*N, 1:N);
-    end
+    % result of Faber approximation
+    rho_fab= faber(L, dt, N, rho_fab);
     
     % evaluate the trace at every iteration
     trace_me(n) = trace(rho_me) - 1;
@@ -176,9 +89,11 @@ papersize = [ 15 12 ];
 fig = figure('units', 'centimeters');
 pos = get(gcf, 'pos');
 set(gcf, 'pos', [pos(1) pos(2) papersize]);
+% plot third line of populations
 plot(t/1e-12, real(pop_me(3, :)), '-.', 'Color', [0, 101, 189]/255, 'DisplayName', 'ME');
 grid on;
 hold on;
+% plot third line of populations
 plot(t/1e-12, real(pop_fab(3, :)), '-', 'Color', [227, 114, 34]/255, 'DisplayName', 'FABER');
 ax = gca;
 set(gca, 'FontName', 'Helvetica', 'FontSize', 12);
@@ -200,16 +115,96 @@ ylim([-0.1 0.6]);
 set(fig, 'PaperPositionMode', 'Auto', 'PaperUnits', 'Centimeters', 'PaperSize', papersize);
 print(fig, 'fab.pdf', '-dpdf', '-fillpage');
 
-% tau = discrete time step
-function CM = fab(M, tau, b_0, b_1)
-% initialize CM
-% Faber coefficients for an elliptic domain
-c_m = @(dt_tilde, m) ((-1i/sqrt(b_1))^m*exp(dt_tilde*b_0)*...
-     besselj(m, 2*dt_tilde*sqrt(-b_1)));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Faber approximation of the matrix exponential
+function rho_fab = faber(L, dt, N, rho_fab)
+% Compute real part of the field of values
+Re_L = (L+L')/2;
 
-CM = zeros(M+1,1);
+% Compute imaginary part of the field of values 
+Im_L = (L-L')/(2i);
 
-for m = 1:(M+1)
-    CM(m) = c_m(tau, m);
+% Compute factors for rectangle from field of values enclosing spectrum
+% and factors of ellipse enclosing the rectangle optimally
+% [Xi_1, Xi_2, -l, l] containing the spectrum of L
+Xi_1 = min(eig(Re_L));
+Xi_2 = max(eig(Re_L));
+l = max(eig(Im_L));
+c = abs((Xi_2-Xi_1)/2);
+
+% Compute optimal scaling factor to preserve stability
+sf = ((l^(2/3)+c^(2/3))^(3/2))/2;
+
+% scaled Liouvillian
+L_sc = L/sf;
+
+% Scaled factors of rectangle and optimal ellipse
+l_sc = l/sf;
+Xi_1_sc = Xi_1/sf;
+Xi_2_sc = Xi_2/sf;
+c_sc = abs((Xi_2_sc-Xi_1_sc)/2);
+
+% Compute the center of the optimal ellipse, first laurent expansion
+% coefficient of PSI
+b_0 =(Xi_1_sc+Xi_2_sc)/2;
+
+% Compute the logarithmic capacity of the optimal ellipse
+r = (sqrt(c_sc^2+(l_sc*c_sc^2)^(2/3))+sqrt(l_sc^2+(c_sc*l_sc^2)^(2/3)))/2;
+
+% Compute second factor in finite conformal mapping for elliptic domain
+b_1 = ((c_sc^(2/3)+l_sc^(2/3))*(c_sc^(4/3)-l_sc^(4/3)))/(4*r);
+
+% Scaled timestep
+dt_tilde = sf*dt;
+
+% Faber coefficients for ellipic domain
+    c_m = @(dt_tilde, m) (((-1i/sqrt(b_1))^m)*exp(dt_tilde*b_0)*...
+    besselj(m, 2*dt_tilde*sqrt(-b_1)));
+
+% establish polynomial truncation order so that M >e*sf*dt
+M = 1;
+while true
+    CM(M) = double(c_m(dt_tilde, M));
+    if abs(CM(M))<10e-15
+        break
+    else
+    M = M+1;
+    end
 end
+
+% Compute time dependent Faber coefficients of order M for elliptic domain
+% initialize CM
+CM = zeros(M+1,1);
+for m = 0:M
+    CM(m+1) = c_m(dt_tilde, m);
+end
+
+% Compute matrix valued polynomials with initial value density matrix from
+% previous iteration
+I = ones(size(L_sc));
+P = zeros((M+1)*N, N);
+
+% Compute matrix valued Faber polynomial recurrence relation
+    % Compute initial value polynomials P_0, P_1, P_2:
+    % P_0 = F_0*rho_fab (from previous timestep n-1)
+    P(1:N, 1:N) = I;
+    
+    % P_1 = F1*rho_fab (from previous timestep n-1)
+    P((N+1):(2*N), 1:N) = (L_sc-b_0*I);
+    
+    % P_2 = F_2*rho_fab (from previous timestep n-1)
+    P((2*N+1):(3*N), 1:N) = (L_sc-b_0*I)-2*b_1*I;
+    
+    % c0*p_0+c1*p_1+c_2*p_2
+    rho_fab = CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N); 
+    
+    % P_3 ... P_M = F_2*rho_fab...P_M*rho_fab(from previous timestep n-1)
+    for i = 3:M
+        % p_{m+1} = L_sc(rho_fab)*p_m - b_0*p_m - b_1*p_{m-1}
+        P((i*N)+1:(i+1)*N, 1:N) = L_sc*P((i-1)*N+1:(i)*N, 1:N)...
+            -b_0*P((i-1)*N+1:(i)*N, 1:N)...
+            -b_1*P((i-1-1)*N+1:(i-1)*N, 1:N);
+        
+        rho_fab = rho_fab+CM(i+1)*P((i*N)+1:(i+1)*N, 1:N);
+    end
 end
