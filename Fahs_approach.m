@@ -46,7 +46,7 @@ t = 0:dt:te;
 
 % state variables
 rho_me = rho_init;
-rho_fab = rho_init;
+setglobal(rho_init);
 
 % result: trace error
 trace_me = zeros(size(t));
@@ -63,12 +63,12 @@ tic;
 % length of time vector is equivalent to number of timesteps
 for n = 1:100
     rho_me = U * rho_me * U';
-    
+    rho_fab = getglobal
     % Liouvillian changing with every iteration
     L = Liouvillian(rho_fab);
     
     % result of Faber approximation
-    rho_fab= faber(L, dt, N, rho_fab);
+    rho_fab= faber(L, dt, N);
     
     % evaluate the trace at every iteration
     trace_me(n) = trace(rho_me) - 1;
@@ -117,7 +117,7 @@ print(fig, 'fab.pdf', '-dpdf', '-fillpage');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Faber approximation of the matrix exponential
-function rho_fab = faber(L, dt, N, rho_fab)
+function rho_fab = faber(L, dt, N)
 % Compute real part of the field of values
 Re_L = (L+L')/2;
 
@@ -194,9 +194,9 @@ P = zeros((M+1)*N, N);
     
     % P_2 = F_2*rho_fab (from previous timestep n-1)
     P((2*N+1):(3*N), 1:N) = (L_sc-b_0*I)-2*b_1*I;
-    
+    rho_fab = getglobal
     % c0*p_0+c1*p_1+c_2*p_2
-    rho_fab = CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N); 
+    setglobal(CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N)); 
     
     % P_3 ... P_M = F_2*rho_fab...P_M*rho_fab(from previous timestep n-1)
     for i = 3:M
@@ -207,4 +207,14 @@ P = zeros((M+1)*N, N);
         
         rho_fab = rho_fab+CM(i+1)*P((i*N)+1:(i+1)*N, 1:N);
     end
+end
+
+function setglobal(rho_fab)
+    global rho_fab_persistent
+    rho_fab_persistent = rho_fab
+end
+
+function result = getglobal
+    global rho_fab_persistent
+    result = rho_fab_persistent
 end
