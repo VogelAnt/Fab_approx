@@ -119,7 +119,7 @@ print(fig, 'fab.pdf', '-dpdf', '-fillpage');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Faber approximation of the matrix exponential
-function whatever = faber(L, dt, N)
+function z = faber(L, dt, N)
     % Compute real part of the field of values
     Re_L = (L+L')/2;
 
@@ -154,7 +154,7 @@ function whatever = faber(L, dt, N)
     r = (sqrt(c_sc^2+(l_sc*c_sc^2)^(2/3))+sqrt(l_sc^2+(c_sc*l_sc^2)^(2/3)))/2;
 
     % Compute second factor in finite conformal mapping for elliptic domain
-    b_1 = ((c_sc^(2/3)+l_sc^(2/3))*(c_sc^(4/3)-l_sc^(4/3)))/(4*r);
+    b_1 = double(((c_sc^(2/3)+l_sc^(2/3))*(c_sc^(4/3)-l_sc^(4/3)))/(4*r));
 
     % Scaled timestep
     dt_tilde = sf*dt;
@@ -188,26 +188,26 @@ function whatever = faber(L, dt, N)
 
     % Compute matrix valued Faber polynomial recurrence relation
     % Compute initial value polynomials P_0, P_1, P_2:
-    % P_0 = F_0*rho_fab (from previous timestep n-1)
+    % F_0
     P(1:N, 1:N) = I;
     
-    % P_1 = F1*rho_fab (from previous timestep n-1)
+    % F_1
     P((N+1):(2*N), 1:N) = (L_sc-b_0*I);
     
-    % P_2 = F_2*rho_fab (from previous timestep n-1)
+    % F_2
     P((2*N+1):(3*N), 1:N) = (L_sc-b_0*I)-2*b_1*I;
     
-    % c0*p_0+c1*p_1+c_2*p_2
+    % c0*F_0+c1*F_1+c_2*F_2
     temp = CM(1)*P(1:N, 1:N)+CM(2)*P(N+1:2*N, 1:N)+CM(3)*P(2*N+1:3*N, 1:N); 
     
-    % P_3 ... P_M = F_2*rho_fab...P_M*rho_fab(from previous timestep n-1)
+    % F_3 ... F_M = c2*F_2...cm*F_m
     for i = 3:M
-        % p_{m+1} = L_sc(rho_fab)*p_m - b_0*p_m - b_1*p_{m-1}
+        % F_{m+1} = L_sc(rho_fab)*F_m - b_0*F_m - b_1*F_{m-1}
         P((i*N)+1:(i+1)*N, 1:N) = L_sc*P((i-1)*N+1:(i)*N, 1:N)...
             -b_0*P((i-1)*N+1:(i)*N, 1:N)...
             -b_1*P((i-1-1)*N+1:(i-1)*N, 1:N);
         
         temp = temp + CM(i+1)*P((i*N)+1:(i+1)*N, 1:N);
     end
-    whatever = temp;
+    z = temp;
 end
