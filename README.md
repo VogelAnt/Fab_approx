@@ -2,9 +2,9 @@
 Both scripts use the Faber polynomial approach for the approximation of the matrix exponential \
 One relies on the Joukovsky mapping to get the recurrence relation, the other the Schwarz Christoffel mapping \
 
-The matrices we had to look at were usually non hermitian so the whole approach relies on using the symmetry of the spectrum well. In this case the non hermitian matrix contains eigenvalues  whose imaginary part is either 0 or complex conjugated \
+The matrices we had to look at were usually non hermitian so the whole approach relies on using the symmetry of the spectrum well. In this case the non hermitian matrix contains eigenvalues  whose imaginary part is either 0 or complex conjugated.
 ![spectrum_1](https://user-images.githubusercontent.com/42518184/107871339-c098e380-6ea0-11eb-86d1-73f5fe38429e.png)
-So we can exploit the  Re-Axis symmetry and use a rectangle to make a suitable domain \
+So we can exploit the  Re-Axis symmetry and use a rectangle to make a suitable domain 
 
 ![rectangle](https://user-images.githubusercontent.com/42518184/107871330-bd9df300-6ea0-11eb-97d3-19f42b6a8fef.png)
 
