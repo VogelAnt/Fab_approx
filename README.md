@@ -12,7 +12,9 @@ So we can exploit the Re-Axis symmetry and use a rectangle based on the numerica
 
 ![rectangle_spectrum](https://user-images.githubusercontent.com/42518184/107871331-be368980-6ea0-11eb-8179-4a51dbaf7c76.png)  
 
-that is framing the spectrum. 
+that is framing the spectrum. With the Faber polynomials in blue :  
+
+
 ![rectangle](https://user-images.githubusercontent.com/42518184/107871330-bd9df300-6ea0-11eb-97d3-19f42b6a8fef.png)
 ![rectangle_spectrum_1](https://user-images.githubusercontent.com/42518184/107871333-becf2000-6ea0-11eb-8c0a-2f8de5f9ebc8.png)
 
