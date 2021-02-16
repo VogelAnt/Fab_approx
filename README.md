@@ -1,5 +1,5 @@
 # Faber approximation
-Both scripts use the Faber polynomial approach for the approximation of the matrix exponential 
+Both scripts use the Faber polynomial approach for the approximation of the matrix exponential i order to solve the open system Liouville von Neumann equation.
 
 One relies on the Joukovsky mapping to get the recurrence relation, the other the Schwarz Christoffel mapping 
 
@@ -18,11 +18,12 @@ that is framing the spectrum. With the Faber polynomials in blue :
 ![rectangle](https://user-images.githubusercontent.com/42518184/107871330-bd9df300-6ea0-11eb-97d3-19f42b6a8fef.png)
 ![rectangle_spectrum_1](https://user-images.githubusercontent.com/42518184/107871333-becf2000-6ea0-11eb-8c0a-2f8de5f9ebc8.png)
 
-![rectangle_spectrum](https://user-images.githubusercontent.com/42518184/107871331-be368980-6ea0-11eb-8179-4a51dbaf7c76.png)
-
+The degree of the polynomial has to be chosen appropriately so as to avoid bad reentrant corners:  
 
 ![reentrant_faber_10](https://user-images.githubusercontent.com/42518184/107871334-becf2000-6ea0-11eb-9227-e4582a7628df.png)
 ![reentrant_faber_40](https://user-images.githubusercontent.com/42518184/107871335-bf67b680-6ea0-11eb-8c54-16f22b364d65.png)
+
+In the first script we create an ellipse framing this rectangle optimally to
 
 An overview of how Schwarz Christoffel mappings work
 ![SC-mappings](https://user-images.githubusercontent.com/42518184/107871336-c0004d00-6ea0-11eb-92e9-46a97c0dbfd7.png)
